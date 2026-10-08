@@ -1,0 +1,106 @@
+import random
+
+LADOS = ["I", "D"]
+NOMBRES = ["el arriero", "el puma", "la cabra", "la lechuga"]
+
+
+def texto(e):
+    return "(" + ",".join(e) + ")"
+
+# cada estado es una letra: ejemplo:  posicion 0 = A, posicion 1 = P, posicion 2 = C, posicion 3 = L
+estados = []
+for a in LADOS:
+    for p in LADOS:
+        for c in LADOS:
+            for l in LADOS:
+                estados.append(a + p + c + l)
+n = len(estados)
+
+
+#los estados: valido:1  /  invalido: 0
+def es_valido(e):
+    a, p, c, l = e
+    if p == c and c != a:   # puma y cabra: se la come ñam ñam ñam
+        return 0
+    if c == l and c != a:   # cabra y lechuga: se la come ñam ñam
+        return 0
+    return 1
+
+
+validos = []
+for e in estados:
+    validos.append(es_valido(e))
+
+
+# cambia de orilla
+def cruzar(lado):
+    if lado == "I":
+        return "D"
+    return "I"
+
+
+# movimientos: 0 = arriero solo, 1 = con puma, 2 = con cabra, 3 = con lechuga
+# el arriero siempre cruza, y el que lo acompaña tambien
+def mover(e, m):
+    nuevo = ""
+    for k in range(4):
+        if k == 0 or k == m:
+            nuevo = nuevo + cruzar(e[k])
+        else:
+            nuevo = nuevo + e[k]
+    return nuevo
+
+
+# Describir que paso entre dos estados
+def describir(e1, e2):
+    destino = "a derecha" if e2[0] == "D" else "a izquierda"
+    llevado = "solo solin solio"
+    for k in range(1, 4):
+        if e1[k] != e2[k]:
+            llevado = "con " + NOMBRES[k]
+    return "El arriero va " + llevado + " " + destino
+
+#-------------------------------------------------------------------------------------------
+# -------------------------------- Programa ------------------------------------------------
+#-------------------------------------------------------------------------------------------
+print("validos (1) / invalidos (0)")
+for i in range(n):
+    print(" ", texto(estados[i]), ">", validos[i])
+
+# BUSQUEDA POR ANCHURA
+# cola      = estados pendientes de revisar (se revisa el primero que entro)
+# visitados = estados que ya descubrimos
+# padres    = padres[i] es el estado desde el que se llego a visitados[i]
+inicio = "IIII"
+meta = "DDDD"
+
+cola = [inicio]
+visitados = [inicio]
+padres = ["-"]
+
+while len(cola) > 0 and meta not in visitados:
+    actual = cola.pop(0)                       # saca el primero de la cola
+    for m in range(4):
+        if m != 0 and actual[m] != actual[0]:  # lo que quiere llevar no esta en su orilla
+            continue
+        nuevo = mover(actual, m)
+        if validos[estados.index(nuevo)] == 1 and nuevo not in visitados:
+            visitados.append(nuevo)
+            padres.append(actual)
+            cola.append(nuevo)
+
+if meta not in visitados:
+    print("\nError on se puede")
+else:
+    # se regresa de la meta al inicio usando los padres
+    camino = [meta]
+    estado = meta
+    while estado != inicio:
+        estado = padres[visitados.index(estado)]
+        camino.append(estado)
+    camino.reverse()
+
+    print("\naqui", texto(camino[0]))
+    for paso in range(1, len(camino)):
+        print(str(paso) + ".", describir(camino[paso - 1], camino[paso]), "->", texto(camino[paso]))
+
