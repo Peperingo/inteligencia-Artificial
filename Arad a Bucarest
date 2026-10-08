@@ -1,0 +1,105 @@
+heuristica = {
+    'Arad': 366,
+    'Bucarest': 0,
+    'Craiova': 160,
+    'Dobreta': 242,
+    'Eforie': 161,
+    'Fagaras': 176,
+    'Giurgiu': 77,
+    'Hirsova': 151,
+    'lasi': 226,
+    'Lugoj': 244,
+    'Mehadia': 241,
+    'Neamt': 234,
+    'Oradea': 233,
+    'Pitesti': 100,
+    'Rimnicu Vilcea': 238,
+    'Sibiu': 237,
+    'Timisoara': 236,
+    'Urziceni': 80,
+    'Vilcea': 81,
+    'Zerind': 82,
+}
+
+#el formato es: {"vecino": el costo real}
+grafo = {
+    'Arad': {'Zerind': 75, 'Sibiu': 140, 'Timisoara': 118},
+    'Sibiu': {'Arad': 140, 'Oradea': 151, 'Fagaras': 99, 'Rimnicu Vilcea': 80},
+    'Rimnicu Vilcea': {'Craiova': 146, 'Pitesti': 97, 'Sibiu': 80},  #corrigelo
+    'Pitesti': {'Bucarest': 101, 'Craiova': 138, 'Rimnicu Vilcea': 97},  #corrigelo
+    'Fagaras': {'Sibiu': 99, 'Bucarest': 211},
+    'Craiova': {'Rimnicu Vilcea': 146, 'Pitesti': 138},
+    'Bucarest': {'Fagaras': 211, 'Pitesti': 101},  #corrigelo
+    'Zerind': {'Arad': 75, 'Oradea': 71},
+    'Oradea': {'Zerind': 71, 'Sibiu': 151},
+    'Timisoara': {'Arad': 118, 'Lugoj': 111},
+    'Lugoj': {'Timisoara': 111, 'Mehadia': 70},
+    'Mehadia': {'Lugoj': 70},
+}
+#Usa esta parte para checar si funcionan los dicciionarios
+print("Vecinos de Sibiu:", grafo['Sibiu'])
+print("Distancia en línea recta de Sibiu a Bucarest:", heuristica['Sibiu'])
+
+
+def algoritmo_a_estrella(grafo, heuristica, inicio, Final):
+    lista_abierta = [inicio]      # rutas ya concoidas pero sin usar
+    lista_cerrada = set()         #ya usadas
+    rastros = {}                  #rastros[ciudad] = de donde vengo
+    #----------------------------------------
+    #g(n): costo real para alcanzar el nodo |
+    # ---------------------------------------
+    costo_g = {inicio: 0}
+
+
+    # ------------------------------------------
+    # f(n): costo total estimado (g(n) + h(n)) |
+    # ------------------------------------------
+    costo_f = {inicio: heuristica[inicio]}
+
+    #funcion normal que le dice a "min()" con que val comparar comparar
+    def obtener_costo_f(ciudad):
+        return costo_f.get(ciudad, float('inf'))
+
+    while lista_abierta:
+                #NO le pongas el  parentesis, SOLO el nombre
+        ciudad_actual = min(lista_abierta, key=obtener_costo_f)
+
+        # aqui rehaces la ruta en reversa
+        if ciudad_actual == Final:
+            ruta = [ciudad_actual]
+            while ciudad_actual in rastros:
+                ciudad_actual = rastros[ciudad_actual]
+                ruta.append(ciudad_actual)
+            ruta.reverse()
+            return ruta, costo_g[Final]
+
+        #cehcar bien para que se hacee esto
+        lista_abierta.remove(ciudad_actual)
+        lista_cerrada.add(ciudad_actual)
+
+        #revisas vecinos
+        for vecino, peso in grafo.get(ciudad_actual, {}).items(): #el .get solo es un cuidado por si no tiene vecionod
+            if vecino in lista_cerrada:
+                continue
+
+            g_nuevo = costo_g[ciudad_actual] + peso
+
+            #este camino es mucho mas mejor que el anterior?
+            if g_nuevo < costo_g.get(vecino, float('inf')):
+                rastros[vecino] = ciudad_actual
+                costo_g[vecino] = g_nuevo
+                costo_f[vecino] = g_nuevo + heuristica[vecino]
+                if vecino not in lista_abierta:
+                    lista_abierta.append(vecino)
+
+    return None, float('inf')  #se vacio la lista
+
+
+#basicamente el programa
+ruta, costo = algoritmo_a_estrella(grafo, heuristica, 'Arad', 'Bucarest')
+
+if ruta:
+    print("Ruta:", " -> ".join(ruta))
+    print("Costo total:", costo)
+else:
+    print("No existe ruta")
